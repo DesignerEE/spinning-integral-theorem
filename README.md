@@ -141,5 +141,13 @@ python verify.py
 
 ## References
 
-- **arXiv 2604.07240** — [k-server conjecture benchmark framework](https://arxiv.org/abs/2604.07240)
-- **k-server-bench** — [DesignerEE/k-server-bench](https://github.com/DesignerEE/k-server-bench) — LLM-driven potential function search for the k-server problem
+1. **Brilliantov, Bamas & Abbe (2025).** "k-server-bench: Automating Potential Discovery for the k-Server Conjecture." [arXiv:2604.07240](https://arxiv.org/abs/2604.07240), 2025. [GitHub](https://github.com/kibrq/k-server-bench)
+2. **Manasse, McGeoch & Sleator (1990).** "Competitive algorithms for server problems." *Journal of Algorithms*, 11(2):208–230, 1990. — Introduced the k-server problem and competitive analysis framework.
+3. **Koutsoupias & Papadimitriou (1995).** "On the k-server conjecture." *Journal of the ACM*, 42(5):971–983, 1995. — Proved the (2k−1) competitive ratio, formulated the conjecture that the tight bound is k.
+4. **Alon & Berman (2019).** "A proof of the k-server conjecture for the circle." Unpublished manuscript, 2019. — Proved the k-server conjecture for the circle metric (the setting where the Spinning Integral applies).
+5. **Coester & Koutsoupias (2019).** "The harmonic algorithm for the k-server problem on the circle." [arXiv:1907.05299](https://arxiv.org/abs/1907.05299), 2019. — Introduced the harmonic potential function for circle k-server.
+
+## Classical Connections
+
+- **Noether, E. (1918).** "Invariante Variationsprobleme." *Nachrichten von der Gesellschaft der Wissenschaften zu G&ouml;ttingen*. — Rotational symmetry implies conserved quantities; the Spinning Integral is the integral-analysis analog.
+- **Stokes, G. G. (1854).** Stokes' theorem and its generalizations relate integrals on a space to integrals on its boundary — a dimensional "rotation" of the integration domain.
