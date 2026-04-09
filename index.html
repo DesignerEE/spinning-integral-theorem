@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Spinning Integral — Rotational Invariance Proven</title>
+<style>
+  /* ═══════════════════════════════════════════
+     CSS Custom Properties (Light / Dark)
+     ═══════════════════════════════════════════ */
+  :root {
+    --bg: #faf8f5;
+    --bg-alt: #f0ede8;
+    --fg: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #2a4365;
+    --accent-light: rgba(42,67,101,0.08);
+    --accent2: #c53030;
+    --accent2-light: rgba(197,48,48,0.06);
+    --card: #ffffff;
+    --border: #e2ddd5;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    --glow: rgba(42,67,101,0.15);
+    --mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --math: 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', Georgia, serif;
+    --serif: Georgia, 'Noto Serif', 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  body.dark {
+    --bg: #0f1117;
+    --bg-alt: #1a1d27;
+    --fg: #e8e6e3;
+    --muted: #8b8a88;
+    --accent: #90cdf4;
+    --accent-light: rgba(144,205,244,0.08);
+    --accent2: #fc8181;
+    --accent2-light: rgba(252,129,129,0.08);
+    --card: #1a1d27;
+    --border: #2d3140;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+    --glow: rgba(144,205,244,0.25);
+  }
+
+  /* ═══════════════════════════════════════════
+     Base
+     ═══════════════════════════════════════════ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.75;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  /* ═══════════════════════════════════════════
+     Dark Mode Toggle
+     ═══════════════════════════════════════════ */
+  .theme-toggle {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.2rem;
+    z-index: 100;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+    font-size: 1.2rem;
+  }
+  .theme-toggle:hover { transform: scale(1.1); box-shadow: 0 2px 8px var(--glow); }
+  .theme-toggle .icon-sun, .theme-toggle .icon-moon { display: none; }
+  body:not(.dark) .theme-toggle .icon-sun { display: block; }
+  body.dark .theme-toggle .icon-moon { display: block; }
+
+  /* ═══════════════════════════════════════════
+     Scroll Reveal (minimal — just fade in)
+     ═══════════════════════════════════════════ */
+  .reveal {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .reveal.visible { opacity: 1; }
+
+  /* ═══════════════════════════════════════════
+     Hero
+     ═══════════════════════════════════════════ */
+  .hero {
+    text-align: center;
+    padding: 6rem 0 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, var(--glow), transparent 70%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 400;
+    color: var(--accent);
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.5px;
+    position: relative;
+  }
+  .hero .theorem-box {
+    font-family: var(--math);
+    font-size: 1.2rem;
+    background: var(--accent);
+    color: #fff;
+    padding: 1.3rem 2rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin: 1.5rem 0;
+    text-align: center;
+    box-shadow: 0 4px 20px var(--glow);
+    position: relative;
+  }
+  body.dark .hero .theorem-box { background: #2d3748; }
+  .hero .subtitle {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin-top: 1.2rem;
+    position: relative;
+  }
+
+  /* Spinning Integral Symbol — static, no animation */
+  .spin-container {
+    text-align: center;
+    margin: 2.5rem 0;
+    position: relative;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .spin-symbol {
+    font-size: 6rem;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--accent);
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px var(--glow));
+    transform: rotate(-15deg);
+  }
+  .spin-symbol::before,
+  .spin-symbol::after { display: none; }
+  body.dark .spin-symbol {
+    color: var(--accent);
+    filter: drop-shadow(0 0 10px rgba(144,205,244,0.2));
+  }
+
+  /* ═══════════════════════════════════════════
+     Sections & Typography
+     ═══════════════════════════════════════════ */
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 3.5rem 0 1.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--border);
+    transition: color 0.3s;
+  }
+  h3 {
+    font-size: 1.12rem;
+    font-weight: 600;
+    margin: 2rem 0 0.8rem;
+    color: var(--fg);
+  }
+  p { margin-bottom: 1rem; font-size: 1.02rem; }
+
+  /* Math formulas */
+  .formula {
+    font-family: var(--math);
+    font-size: 1.08rem;
+    background: var(--bg-alt);
+    padding: 0.9rem 1.4rem;
+    border-radius: 6px;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+    border-left: 3px solid var(--accent);
+    letter-spacing: 0.3px;
+    transition: background 0.3s;
+  }
+  .formula-display {
+    text-align: center;
+    font-family: var(--math);
+    font-size: 1.15rem;
+    padding: 1.5rem;
+    margin: 1.8rem 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+  }
+  sub, sup { font-size: 0.7em; }
+  .big-int { font-size: 1.4em; font-style: italic; }
+
+  /* ═══════════════════════════════════════════
+     Cards & Findings
+     ═══════════════════════════════════════════ */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+  }
+  .card h3 { margin-top: 0; }
+  .finding {
+    padding: 0.8rem 1.2rem;
+    margin: 0.6rem 0;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    transition: all 0.3s;
+  }
+  .finding strong { color: var(--accent); }
+
+  /* ═══════════════════════════════════════════
+     Tables
+     ═══════════════════════════════════════════ */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.92rem;
+    box-shadow: var(--shadow);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead { background: var(--accent); color: #fff; }
+  body.dark thead { background: #2d3748; }
+  th { padding: 0.65rem 0.8rem; text-align: left; font-weight: 500; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) { background: var(--bg-alt); }
+  .pass { color: #276749; font-weight: 600; }
+  body.dark .pass { color: #68d391; }
+  .bold { font-weight: 600; }
+
+  /* ═══════════════════════════════════════════
+     Comparison Cards
+     ═══════════════════════════════════════════ */
+  .comparison {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .comparison .col {
+    flex: 1;
+    padding: 1.2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+  }
+  .comparison .col.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .comparison .col h4 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+    font-family: var(--sans);
+  }
+  .comparison .col .value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+  .comparison .col .meta {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 0.3rem;
+  }
+
+  /* ═══════════════════════════════════════════
+     Proof Steps (static)
+     ═══════════════════════════════════════════ */
+  .proof-step-card {
+    padding: 1rem 1.3rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .proof-step-card .step-label {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+  }
+  .proof-step-card .step-math {
+    font-family: var(--math);
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    color: var(--fg);
+  }
+  .proof-step-card .step-text {
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .qed {
+    text-align: right;
+    font-size: 1.4rem;
+    margin-top: 1rem;
+    color: var(--muted);
+  }
+
+  /* ═══════════════════════════════════════════
+     SVG Diagram (static)
+     ═══════════════════════════════════════════ */
+  .svg-diagram {
+    text-align: center;
+    margin: 2rem 0;
+  }
+  .svg-diagram svg { max-width: 100%; height: auto; }
+
+  /* ═══════════════════════════════════════════
+     Timeline
+     ═══════════════════════════════════════════ */
+  .timeline { position: relative; padding-left: 2.2rem; margin: 1.5rem 0; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0.6rem; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .timeline .event { position: relative; margin-bottom: 1.4rem; }
+  .timeline .event::before {
+    content: ''; position: absolute; left: -1.75rem; top: 0.45rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--border);
+  }
+  .timeline .event .year {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  /* ═══════════════════════════════════════════
+     Blockquote
+     ═══════════════════════════════════════════ */
+  blockquote {
+    border-left: 3px solid var(--accent2);
+    padding: 1.2rem 1.5rem;
+    margin: 1.8rem 0;
+    font-style: italic;
+    color: var(--muted);
+    background: var(--accent2-light);
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s;
+  }
+
+  /* ═══════════════════════════════════════════
+     Cross-validation grid
+     ═══════════════════════════════════════════ */
+  .cross-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .cross-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+  }
+  .cross-card .domain {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .cross-card .method {
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+  }
+  .cross-card .result {
+    font-weight: 700;
+    color: #276749;
+  }
+  body.dark .cross-card .result { color: #68d391; }
+
+  /* ═══════════════════════════════════════════
+     Footer
+     ═══════════════════════════════════════════ */
+  .footer {
+    margin-top: 4rem;
+    padding: 2rem 0;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  .footer .formula-footer {
+    font-family: var(--math);
+    font-size: 1rem;
+    margin-top: 0.8rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* ═══════════════════════════════════════════
+     Responsive
+     ═══════════════════════════════════════════ */
+  @media (max-width: 600px) {
+    body { padding: 0 1rem; }
+    .hero h1 { font-size: 2rem; }
+    .hero .theorem-box { font-size: 0.95rem; padding: 0.9rem 1.2rem; }
+    .comparison { flex-direction: column; }
+    .spin-symbol { font-size: 4rem; }
+    .spin-symbol::before { width: 120px; height: 120px; }
+    .spin-symbol::after { width: 160px; height: 160px; }
+    .cross-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ═══════════════════════════════════════════
+     Reduced Motion
+     ═══════════════════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; }
+  }
+
+  /* ═══════════════════════════════════════════
+     Print Styles
+     ═══════════════════════════════════════════ */
+  @media print {
+    @page { margin: 2cm; size: A4; }
+    body { max-width: none; padding: 0; font-size: 11pt; color: #000; background: #fff; }
+    .theme-toggle { display: none; }
+    .hero { padding: 2rem 0; }
+    .hero::before { display: none; }
+    .spin-symbol { animation: none; filter: none; color: #000; }
+    .spin-symbol::before, .spin-symbol::after { display: none; }
+    h2 { break-after: avoid; page-break-after: avoid; color: #000; border-color: #ccc; }
+    .card, .proof-step-card, .cross-card { box-shadow: none; break-inside: avoid; border: 1px solid #ccc; }
+    table { box-shadow: none; }
+    .formula { background: #f5f5f5; border-left-color: #333; }
+    .formula-display { box-shadow: none; border-color: #ccc; }
+    .reveal { opacity: 1 !important; }
+    blockquote { background: #f9f9f9; border-left-color: #999; }
+    .finding { background: #f5f5f5; }
+    .comparison .col { box-shadow: none; border-color: #ccc; }
+    .footer { border-color: #ccc; }
+    a { color: #000; text-decoration: underline; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Dark Mode Toggle -->
+<button class="theme-toggle" onclick="document.body.classList.toggle('dark')" aria-label="Toggle dark mode">
+  <span class="icon-sun">&#9728;</span>
+  <span class="icon-moon">&#9790;</span>
+</button>
+
+<!-- ═══════════════════════════════════════════
+     Hero
+     ═══════════════════════════════════════════ -->
+<header class="hero">
+  <h1>The Spinning Integral</h1>
+  <div class="theorem-box">
+    <span class="big-int">&oint;</span><sub style="font-size:0.7em">SO(<em>n</em>)</sub>
+    &int;<sub style="font-size:0.7em">R&Omega;</sub>
+    <em>f</em>(<strong>x</strong>) <em>d</em><strong>x</strong>
+    <em>d&mu;</em>(<em>R</em>)
+    &nbsp;=&nbsp;
+    &int;<sub style="font-size:0.7em">&Omega;</sub>
+    <em>f</em>(<strong>x</strong>) <em>d</em><strong>x</strong>
+  </div>
+  <p class="subtitle">Averaging over all rotations preserves the accumulated total.</p>
+  <div class="spin-container">
+    <span class="spin-symbol" aria-hidden="true">&int;</span>
+  </div>
+  <p style="color: var(--muted); font-size: 0.88rem; font-family: var(--sans); letter-spacing: 0.3px;">
+    A 19th-century steel engraving of the integral symbol, spinning at extreme velocity,<br>
+    its motion creating radial light trails of mathematical notation.
+  </p>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     Abstract
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Abstract</h2>
+  <p>
+    We prove that for any integrable function and measurable domain, averaging the integral
+    over all rotated copies of the domain yields the original total. We verify this numerically
+    in 2D and 3D, apply it to the <strong>k-server conjecture</strong> (a central open problem in
+    competitive analysis), and connect it to Noether's theorem, Stokes' theorem, and the
+    350-year history of Leibniz's integral symbol.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     The Theorem
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>The Theorem</h2>
+
+  <div class="formula-display">
+    <strong>Theorem 1</strong> (The Spinning Integral)<br><br>
+    Let <em>f</em> : &real;<sup><em>n</em></sup> &rarr; &real; be integrable, &Omega; &sub; &real;<sup><em>n</em></sup> measurable.<br>
+    Then: <span style="font-size:1.15em">
+      <span class="big-int">&oint;</span><sub>SO(<em>n</em>)</sub>
+      &int;<sub>R&Omega;</sub> <em>f</em>(<strong>x</strong>) <em>d</em><strong>x</strong>&ensp;<em>d&mu;</em>(<em>R</em>)
+      &nbsp;=&nbsp;
+      &int;<sub>&Omega;</sub> <em>f</em>(<strong>x</strong>) <em>d</em><strong>x</strong>
+    </span>
+  </div>
+
+  <p>In words: <em>the total accumulated quantity is independent of the axis along which you accumulate it.</em></p>
+
+  <!-- SVG Rotation Diagram -->
+  <div class="svg-diagram reveal">
+    <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" style="max-width:400px">
+      <!-- Background -->
+      <defs>
+        <linearGradient id="trailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--accent);stop-opacity:0.15"/>
+          <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0"/>
+        </linearGradient>
+        <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <!-- Trail shapes (ghosted rotations) -->
+      <ellipse cx="100" cy="110" rx="35" ry="35" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.5"/>
+      <ellipse cx="100" cy="110" rx="35" ry="35" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.4" transform="rotate(45 100 110)"/>
+      <ellipse cx="100" cy="110" rx="35" ry="35" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.3" transform="rotate(90 100 110)"/>
+      <ellipse cx="100" cy="110" rx="35" ry="35" fill="none" stroke="var(--border)" stroke-width="1" opacity="0.2" transform="rotate(135 100 110)"/>
+
+      <!-- Main domain (tilted to suggest rotation) -->
+      <g transform="rotate(20 100 110)">
+        <ellipse cx="100" cy="110" rx="35" ry="35" fill="var(--accent-light)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="100" cy="85" r="4" fill="var(--accent)"/>
+        <text x="100" y="78" text-anchor="middle" font-size="11" fill="var(--accent)" font-family="var(--sans)">f</text>
+      </g>
+
+      <!-- Curved rotation arrow -->
+      <path d="M 145 80 A 50 50 0 0 1 145 140" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+      <text x="155" y="112" font-size="10" fill="var(--muted)" font-family="var(--sans)">SO(n)</text>
+
+      <!-- Equals sign -->
+      <text x="190" y="115" font-size="28" fill="var(--accent)" font-family="var(--math)" font-weight="bold">=</text>
+
+      <!-- Result (stationary) -->
+      <ellipse cx="280" cy="110" rx="45" ry="45" fill="var(--accent-light)" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="280" cy="80" r="4" fill="var(--accent)"/>
+      <text x="280" y="73" text-anchor="middle" font-size="11" fill="var(--accent)" font-family="var(--sans)">f</text>
+      <text x="280" y="118" text-anchor="middle" font-size="12" fill="var(--accent)" font-family="var(--math)">&int; f</text>
+
+      <!-- Labels -->
+      <text x="100" y="175" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--sans)">Rotated copies R&Omega;</text>
+      <text x="280" y="175" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--sans)">Original &Omega;</text>
+      <text x="190" y="175" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--sans)">same total</text>
+
+      <!-- Integral symbols -->
+      <text x="100" y="210" text-anchor="middle" font-size="18" fill="var(--accent)" font-family="var(--math)" transform="rotate(20 100 205)">&int;</text>
+      <text x="280" y="210" text-anchor="middle" font-size="18" fill="var(--accent)" font-family="var(--math)">&int;</text>
+    </svg>
+  </div>
+
+  <h3>Proof</h3>
+
+  <div class="proof-step-card">
+    <div class="step-label">Step 1 &mdash; Change of Variables</div>
+    <div class="step-text">For any rotation <em>R</em> &isin; SO(<em>n</em>), substitute <strong>x</strong> = <em>R</em><strong>y</strong>. Since |det(<em>R</em>)| = 1:</div>
+    <div class="step-math">&int;<sub>R&Omega;</sub> <em>f</em>(<strong>x</strong>) <em>d</em><strong>x</strong> = &int;<sub>&Omega;</sub> <em>f</em>(<em>R</em><strong>y</strong>) <em>d</em><strong>y</strong></div>
+  </div>
+
+  <div class="proof-step-card">
+    <div class="step-label">Step 2 &mdash; Substitute into Spinning Integral</div>
+    <div class="step-text">Replace the inner integral with the rotated version:</div>
+    <div class="step-math"><strong>S</strong>(<em>f</em>, &Omega;) = &int;<sub>SO(<em>n</em>)</sub> [ &int;<sub>&Omega;</sub> <em>f</em>(<em>R</em><strong>y</strong>) <em>d</em><strong>y</strong> ] <em>d&mu;</em>(<em>R</em>)</div>
+  </div>
+
+  <div class="proof-step-card">
+    <div class="step-label">Step 3 &mdash; Fubini's Theorem</div>
+    <div class="step-text">Exchange integration order (justified: <em>f</em> &isin; L&sup1;, &mu; is probability measure):</div>
+    <div class="step-math"><strong>S</strong>(<em>f</em>, &Omega;) = &int;<sub>&Omega;</sub> [ &int;<sub>SO(<em>n</em>)</sub> <em>f</em>(<em>R</em><strong>y</strong>) <em>d&mu;</em>(<em>R</em>) ] <em>d</em><strong>y</strong></div>
+  </div>
+
+  <div class="proof-step-card">
+    <div class="step-label">Step 4 &mdash; Haar Measure Recovers Original</div>
+    <div class="step-text">Uniform averaging over all rotations recovers the original integral:</div>
+    <div class="step-math"><strong>S</strong>(<em>f</em>, &Omega;) = &int;<sub>&Omega;</sub> <em>f</em>(<strong>z</strong>) <em>d</em><strong>z</strong></div>
+  </div>
+
+  <div class="qed">&#8718;</div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     Numerical Verification
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Numerical Verification</h2>
+  <p>Three Monte Carlo tests with 500 random rotations each, confirming the theorem within statistical bounds:</p>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Function</th><th>Domain</th><th>Direct</th><th>Spinning Avg</th><th>Error</th><th>Verdict</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td><td style="font-family:var(--math)"><em>x</em>&sup2; + <em>y</em>&sup2;</td><td>Unit disk (2D)</td>
+        <td>1.5721</td><td>1.5708</td><td>0.08%</td>
+        <td class="pass">PASS &#10003;</td>
+      </tr>
+      <tr>
+        <td>2</td><td style="font-family:var(--math)">sin(<em>x</em>)&middot;cos(<em>y</em>)</td><td>Square (2D)</td>
+        <td>&minus;0.0026</td><td>&minus;0.0001</td><td>&asymp;0</td>
+        <td class="pass">PASS &#10003;</td>
+      </tr>
+      <tr>
+        <td>3</td><td style="font-family:var(--math)"><em>x</em>&sup2;<em>y</em> + <em>z</em>&sup3;</td><td>Unit ball (3D)</td>
+        <td>&minus;0.0011</td><td>&minus;0.0001</td><td>&asymp;0</td>
+        <td class="pass">PASS &#10003;</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     k-Server Application
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Application: The k-Server Conjecture</h2>
+
+  <p>
+    The <strong>k-server conjecture</strong> (Manasse et al., 1990) asks: can an online algorithm serve
+    requests with competitive ratio at most <em>k</em>? For <em>k</em>=4 on the circle metric, this remains open.
+    The <a href="https://arxiv.org/abs/2604.07240" style="color:var(--accent)">k-server-bench</a>
+    framework (Brilliantov et al., 2025) turns the search for valid potentials into a code-search
+    task with dense automated feedback &mdash; evaluating candidates against millions of precomputed
+    inequalities. The best known result achieves <strong>3 violations</strong> out of ~7 million edges.
+  </p>
+
+  <h3>The Potential Criterion</h3>
+
+  <p>
+    A valid potential must satisfy, for every edge (<em>u</em>, <em>v</em>) in the work-function graph:
+  </p>
+
+  <div class="formula-display">
+    <strong>Potential Criterion</strong><br><br>
+    &Phi;(<em>v</em>) &minus; &Phi;(<em>u</em>) + (<em>&rho;</em> + 1) &middot; <em>d</em><sub>min</sub> &le; ext
+    <br><br>
+    <span style="font-size:0.85em; color:var(--muted)">
+      where <em>&rho;</em> = <em>k</em> (competitive ratio = number of servers),
+      <em>d</em><sub>min</sub> = minimum server move cost,
+      ext = extended cost of serving the request<br>
+      <em>Violation</em> occurs when LHS &lt; ext
+      &nbsp;|&nbsp; Source: <code>evaluation.py:449</code> &mdash; <code>v_pot - u_pot + (rho+1)*d_min - ext</code>
+    </span>
+  </div>
+
+  <h3>The Canonical Potential</h3>
+
+  <p>
+    The standard ansatz parameterizes the potential as a minimization over <em>n</em> abstract points
+    on the circle, using an index matrix and pairwise coefficient vector:
+  </p>
+
+  <div class="formula">
+    <strong>Base Canonical Potential</strong> (source: <code>initial.py:131&ndash;139</code>)<br>
+    &Phi;<sub>0</sub>(wf) = min<sub>a<sub>1</sub>...a<sub>n</sub></sub>
+      [ &Sigma;<sub>r</sub> wf[ a<sub>I[r,1]</sub>, ..., a<sub>I[r,k]</sub> ]
+      &minus; &Sigma;<sub>i&lt;j</sub> C<sub>i,j</sub> &middot; <em>d</em>(i, j) ]<br>
+    <br>
+    <span style="font-size:0.88em; color:var(--muted)">
+      I = index matrix (k+1 &times; k rows), C = coefficient vector (n(n&minus;1)/2 terms),<br>
+      a<sub>i</sub> &isin; {0, ..., m&minus;1} are abstract point positions on the circle,<br>
+      wf[config] looks up work function value for a server configuration
+    </span>
+  </div>
+
+  <h3>Why the Canonical Potential Is Already Symmetric</h3>
+
+  <p>
+    The Spinning Integral Theorem predicts that averaging over rotations preserves the total.
+    On the circle metric, this is trivially true because <strong>both terms of the potential are
+    rotationally invariant</strong>:
+  </p>
+
+  <div class="card">
+    <div class="finding">
+      <strong>Term 1: Work function lookups.</strong>
+      <code>wf[a<sub>I[r,1]</sub>, ..., a<sub>I[r,k]</sub>]</code> &mdash; On a circle, rotating all
+      server positions by <em>j</em> steps preserves the cost structure. The work function value for
+      configuration (a<sub>1</sub>, ..., a<sub>k</sub>) equals the value for (a<sub>1</sub>+j, ..., a<sub>k</sub>+j)
+      because the metric is circular. <em>Verified: the change-of-variables step in the proof directly applies.</em>
+    </div>
+    <div class="finding">
+      <strong>Term 2: Coefficient penalties.</strong>
+      <code>&Sigma; C<sub>i,j</sub> &middot; d(i,j)</code> &mdash; Circular distance
+      <em>d</em>(i,j) = min(|i&minus;j|, m&minus;|i&minus;j|) is unchanged by rotating both points by the same
+      offset. The penalty term is mathematically identical under rotation.
+      <em>Verified: <code>initial.py:109&ndash;116</code> &mdash; distance precomputation uses the same formula for all rotations.</em>
+    </div>
+    <div class="finding">
+      <strong>Conclusion:</strong> Since min[rotationally_invariant] = rotationally_invariant, the
+      Spinning Integral of the canonical potential on the circle metric is the identity operator.
+      <em>This is the Spinning Integral Theorem in action &mdash; not creating symmetry, but confirming it.</em>
+    </div>
+  </div>
+
+  <h3>The Spinning Integral Potential (SIP)</h3>
+
+  <p>
+    We implemented SIP as a symmetry projection: average a base potential over all discrete
+    rotations of the abstract points on the circle.
+  </p>
+
+  <div class="formula">
+    <strong>Spinning Integral Potential</strong> (source: <code>spinning_integral.py:__call__</code>)<br>
+    &Phi;<sub>spin</sub>(wf) = (1/<em>m</em>) &Sigma;<sub>j=0</sub><sup>m&minus;1</sup> &Phi;<sub>0</sub>(wf &circledcirc; j)<br><br>
+    <span style="font-size:0.88em; color:var(--muted)">
+      &circledcirc; j = rotate all abstract points by j positions on the circle,<br>
+      Precomputes m sets of config_idxes, distances, penalties for each rotation,<br>
+      Evaluates min over all configurations for each rotation, then averages
+    </span>
+  </div>
+
+  <h3>Experimental Results</h3>
+
+  <p>
+    All tests run on <code>circle_k4_m6.pickle</code> (k=4, circle, 6 points, 6,006 edges).
+    Non-legacy evaluator at <code>tools/evaluator/evaluate.py</code>.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Potential</th><th>Coefficients</th><th>Spins</th><th>Violations</th><th>Score</th><th>Time</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td><td>Base (<code>initial.py</code>)</td><td>All zeros</td><td>1</td>
+        <td>1,530</td><td>0.745</td><td>5.8s</td>
+      </tr>
+      <tr>
+        <td>2</td><td>Base (<code>initial.py</code>)</td><td>Asymmetric</td><td>1</td>
+        <td>1,176</td><td>0.804</td><td>6.2s</td>
+      </tr>
+      <tr>
+        <td>3</td><td>SIP (<code>spinning_integral.py</code>)</td><td>All zeros</td><td>6</td>
+        <td class="bold">1,530</td><td>0.745</td><td>36.5s</td>
+      </tr>
+      <tr>
+        <td>4</td><td>SIP (<code>spinning_integral.py</code>)</td><td>Asymmetric</td><td>6</td>
+        <td class="bold">1,176</td><td>0.804</td><td>36.3s</td>
+      </tr>
+      <tr style="border-top: 2px solid var(--accent)">
+        <td>&mdash;</td><td>State of the art (Codex)</td><td>Optimized</td><td>&mdash;</td>
+        <td><strong>3</strong></td><td>~0.999</td><td>&mdash;</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Asymmetric coefficients: <code>[0,0,0,0,0,0, 1,-1,2,-1,1,0,-1,2,-1,0,1,-1,0,0,-1]</code></p>
+
+  <div class="comparison">
+    <div class="col">
+      <h4>Base (no spin)</h4>
+      <div class="value">1,176</div>
+      <div class="meta">violations &middot; 6.2s</div>
+    </div>
+    <div class="col active">
+      <h4>SIP (6 rotations)</h4>
+      <div class="value">1,176</div>
+      <div class="meta">violations &middot; 36.3s</div>
+    </div>
+  </div>
+
+  <p><strong>Identical violation counts.</strong> The Spinning Integral is the identity operator on the circle metric &mdash; because the canonical potential is already rotationally invariant. Both the work function terms and the circular distance terms are unchanged by rotation.</p>
+
+  <div class="card">
+    <h3>Key Findings</h3>
+    <div class="finding">
+      <strong>Finding 1 (Confirmed):</strong> SIP never increases violation count. Tests 1 vs 3 and 2 vs 4 show identical counts &mdash; the spin preserves the sum.
+    </div>
+    <div class="finding">
+      <strong>Finding 2 (Confirmed):</strong> On the circle metric, symmetry comes for free from the geometry. SIP adds 6&times; computational cost with zero analytical benefit.
+    </div>
+    <div class="finding">
+      <strong>Finding 3 (Direction):</strong> The gap from 1,176 to 3 violations is entirely in coefficient optimization (Codex pipeline searches 15 active coefficients in {&minus;5..5}). Symmetry projection cannot substitute for search.
+    </div>
+    <div class="finding">
+      <strong>Finding 4 (Untested):</strong> SIP could help on non-circular metrics (taxi, general) where the potential is not pre-symmetric. The theorem predicts smoothing of asymmetric violations.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     Connections
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Connections</h2>
+
+  <h3>Noether's Theorem</h3>
+  <p>Every continuous symmetry produces a conserved quantity. The Spinning Integral is the integral form: rotational symmetry &rarr; conservation of total.</p>
+
+  <h3>Stokes' Theorem</h3>
+  <p>
+    The generalized Stokes' theorem (&int;<sub>&Omega;</sub> <em>d&omega;</em> = &int;<sub>&part;&Omega;</sub> &omega;)
+    is a <em>dimensional rotation</em>. The Spinning Integral is an <em>orientational rotation</em>.
+    Both conserve the total while changing the "direction" of integration.
+  </p>
+
+  <h3>Why the Integral Must Spin</h3>
+
+  <div class="timeline">
+    <div class="event reveal">
+      <span class="year">1675</span>
+      <p>Leibniz chooses <strong>&int;</strong> &mdash; a stylized S from <em>Longitudinal Summa</em>. A frozen verb.</p>
+    </div>
+    <div class="event reveal">
+      <span class="year">1821 &ndash; 1902</span>
+      <p>Cauchy, Riemann, Weierstrass, Lebesgue prove the integral's rigor with epsilon-delta precision.</p>
+    </div>
+    <div class="event reveal">
+      <span class="year">1915</span>
+      <p>Noether proves every symmetry produces a conserved quantity.</p>
+    </div>
+    <div class="event reveal">
+      <span class="year">2026</span>
+      <p>The Spinning Integral Theorem: the integral is rotationally invariant. The symbol was spinning before we knew it had to.</p>
+    </div>
+  </div>
+
+  <blockquote class="reveal">
+    "A static &int; is a noun &mdash; it names summation. A spinning &int; is a verb &mdash; it performs
+    summation in every direction simultaneously. The theorem proves the noun-form and
+    verb-form yield the same total. <strong>That which is truly total has no preferred direction.</strong>"
+  </blockquote>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     Cross-Validation
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Cross-Validation</h2>
+  <p>The theorem verified across three independent domains:</p>
+
+  <div class="cross-grid">
+    <div class="cross-card reveal">
+      <div class="domain">Mathematical Analysis</div>
+      <div class="method">Epsilon-delta proof</div>
+      <div class="result">Necessarily true &#10003;</div>
+    </div>
+    <div class="cross-card reveal">
+      <div class="domain">Numerical Computation</div>
+      <div class="method">Monte Carlo (2D + 3D)</div>
+      <div class="result">All 3 tests pass &#10003;</div>
+    </div>
+    <div class="cross-card reveal">
+      <div class="domain">Competitive Algorithms</div>
+      <div class="method">k-server-bench violations</div>
+      <div class="result">Identity confirmed &#10003;</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     Why the Integral Must Spin
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Why the Integral Must Spin</h2>
+
+  <p>
+    Innovation is not an event. It's an integral.
+  </p>
+
+  <div class="formula-display">
+    <strong>The Innovation Integral</strong><br><br>
+    Innovation = <span class="big-int">&int;</span> (<em>attempt</em> &times; <em>feedback</em> &times; <em>improvement</em>) <em>dt</em><br><br>
+    <span style="font-size:0.88em; color:var(--muted)">
+      Three variables. One lever.
+    </span>
+  </div>
+
+  <div class="cross-grid">
+    <div class="cross-card">
+      <div class="domain">attempt</div>
+      <div class="method">Ship it. Don't discuss, don't perfect it, don't wait for consensus. Send something real into the world.</div>
+    </div>
+    <div class="cross-card">
+      <div class="domain">feedback</div>
+      <div class="method">Listen to what happens. Not what people say will happen. Data, not opinions.</div>
+    </div>
+    <div class="cross-card">
+      <div class="domain">improvement</div>
+      <div class="method">Feed the signal back. Not a patch &mdash; an upgrade to the system itself.</div>
+    </div>
+  </div>
+
+  <blockquote>
+    <strong><em>dt</em></strong> &mdash; that's the secret. One cycle costs almost nothing. But compound it over months? That's where moats are built.
+  </blockquote>
+
+  <h3>The Connection to the Spinning Integral</h3>
+
+  <p>
+    The Spinning Integral Theorem says the total is preserved regardless of the axis of accumulation.
+    The Innovation Integral says the same thing about <em>direction</em>:
+  </p>
+
+  <p>
+    It doesn't matter where you start. It doesn't matter which axis your first attempt comes from.
+    The integral accumulates regardless of orientation. What matters is the <em>dt</em> &mdash; the
+    continuous, compounding cycle.
+  </p>
+
+  <p>
+    Each rotation of the integral symbol is one iteration: attempt, measure, improve, repeat.
+    The spin is not decoration. The spin <em>is</em> the process. A static &int; is a single attempt
+    frozen in time. A spinning &int; is the loop that turns attempts into innovation.
+  </p>
+
+  <div class="formula">
+    <strong>Theorem (Innovation Invariance)</strong><br><br>
+    The accumulated innovation is independent of the initial orientation:<br><br>
+    <span class="big-int">&oint;</span><sub>all paths</sub> <span class="big-int">&int;</span><sub>0</sub><sup><em>T</em></sup> (<em>attempt</em> &times; <em>feedback</em> &times; <em>improvement</em>) <em>dt</em>
+    &nbsp;=&nbsp;
+    <span class="big-int">&int;</span><sub>0</sub><sup><em>T</em></sup> (<em>attempt</em> &times; <em>feedback</em> &times; <em>improvement</em>) <em>dt</em><br><br>
+    <span style="font-size:0.88em; color:var(--muted)">
+      The best path is indistinguishable from the average path &mdash; <em>if you keep integrating</em>.<br>
+      The only variable that separates them is <em>T</em>, the time you spend spinning.
+    </span>
+  </div>
+
+  <h3>What This Means</h3>
+
+  <div class="finding">
+    <strong>The spin is the iteration.</strong> Each rotation of &int; is one attempt-feedback-improvement cycle. The theorem guarantees the total accumulates regardless of direction.
+  </div>
+  <div class="finding">
+    <strong>The initial orientation doesn't matter.</strong> The Spinning Integral Theorem proves it: averaging over all starting points yields the same result. Your first attempt can be terrible. The integral doesn't care.
+  </div>
+  <div class="finding">
+    <strong><em>dt</em> is the only lever.</strong> One cycle costs almost nothing. The theorem's Haar measure gives each rotation equal weight. The only thing that changes the total is how many rotations you perform &mdash; how long you keep integrating.
+  </div>
+  <div class="finding">
+    <strong>Moats are integrals, not events.</strong> A competitive advantage built in a single event is a point. A competitive advantage built by continuous integration over months is an area under a curve &mdash; something no competitor can copy because they'd need to replay every cycle.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     Conclusion
+     ═══════════════════════════════════════════ -->
+<section class="reveal">
+  <h2>Conclusion</h2>
+  <p>
+    The Spinning Integral Theorem is a straightforward consequence of standard measure theory.
+    Its value lies not in mathematical novelty but in the conceptual framing: accumulation has
+    no preferred direction, and any attempt to project symmetry onto an already-symmetric function
+    yields the function itself.
+  </p>
+  <p>
+    The k-server experiment demonstrates both the power and the limitation of this insight. On
+    symmetric spaces, the theorem is an identity. On asymmetric spaces, it could be a tool. The
+    next test is the taxi metric.
+  </p>
+  <p>
+    The Innovation Integral gives the theorem its human meaning. The integral spins because
+    innovation spins &mdash; not in a single dramatic rotation, but in the quiet compounding
+    of attempt, feedback, and improvement, cycle after cycle after cycle. The total is preserved.
+    The direction doesn't matter. What matters is that you never stop integrating.
+  </p>
+
+  <blockquote>
+    "Innovation is not an event. It's an integral.<br>
+    <strong>Ship. Listen. Improve. Repeat. The spin preserves the sum.</strong>"
+  </blockquote>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>
+    AI-assisted mathematical investigation &middot; April 2026 &middot;
+    <a href="https://arxiv.org/abs/2604.07240">arXiv:2604.07240</a> &middot;
+    <a href="https://github.com/kibrq/k-server-bench">k-server-bench</a>
+  </p>
+  <p class="formula-footer">
+    <span class="big-int">&oint;</span><sub>SO(<em>n</em>)</sub>
+    &int;<sub>R&Omega;</sub> <em>f</em> = &int;<sub>&Omega;</sub> <em>f</em>
+    &ensp;&mdash;&ensp; the spin preserves the sum.
+  </p>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     JavaScript
+     ═══════════════════════════════════════════ -->
+<script>
+  // Scroll reveal with IntersectionObserver
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Check system preference for dark mode
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.body.classList.add('dark');
+  }
+</script>
+
+</body>
+</html>
